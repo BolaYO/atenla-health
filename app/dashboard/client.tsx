@@ -11,6 +11,7 @@ import { PatientsManager } from '@/components/dashboard/PatientsManager'
 import { BillingManager } from '@/components/dashboard/BillingManager'
 import { ReportingManager } from '@/components/dashboard/ReportingManager'
 import { StaffManager } from '@/components/dashboard/StaffManager'
+import { SettingsManager } from '@/components/dashboard/SettingsManager'
 import { FrontDeskManager } from '@/components/dashboard/FrontDeskManager'
 import { VitalsManager } from '@/components/dashboard/VitalsManager'
 
@@ -37,7 +38,7 @@ interface Props {
   facilityUser: FacilityUser
 }
 
-type Tab = 'overview' | 'inventory' | 'procurement' | 'dispensing' | 'front_desk' | 'vitals' | 'patients' | 'billing' | 'reports' | 'notifications' | 'staff'
+type Tab = 'overview' | 'inventory' | 'procurement' | 'dispensing' | 'front_desk' | 'vitals' | 'patients' | 'billing' | 'reports' | 'notifications' | 'staff' | 'settings'
 
 const ALL_TABS: { key: Tab; label: string }[] = [
   { key: 'overview',    label: 'Overview' },
@@ -51,6 +52,7 @@ const ALL_TABS: { key: Tab; label: string }[] = [
   { key: 'reports',     label: 'Reports' },
   { key: 'notifications', label: 'Notifications' },
   { key: 'staff',       label: 'Staff' },
+  { key: 'settings',    label: 'Settings' },
 ]
 
 const ROLE_TABS: Record<string, Tab[]> = {
@@ -76,6 +78,7 @@ export function DashboardClient({ facility, facilityUser }: Props) {
   const visibleTabs = ALL_TABS.filter(t => {
     if (t.key === 'overview') return facilityUser.is_admin || !usesNewPermissionModel && (ROLE_TABS[facilityUser.role] ?? []).includes('overview')
     if (t.key === 'staff') return !!facilityUser.is_admin
+    if (t.key === 'settings') return !!facilityUser.is_admin
     if (facilityUser.is_admin) return true
     if (usesNewPermissionModel) return (facilityUser.allowed_modules ?? []).includes(t.key)
     return (ROLE_TABS[facilityUser.role] ?? []).includes(t.key)
@@ -142,7 +145,7 @@ export function DashboardClient({ facility, facilityUser }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-20 no-print">
         <div className="flex items-center gap-3">
           {facility.logo_url ? (
             <img src={facility.logo_url} alt={facility.name} className="w-8 h-8 rounded-xl object-cover" />
@@ -170,7 +173,7 @@ export function DashboardClient({ facility, facilityUser }: Props) {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-100 px-6 overflow-x-auto">
+      <div className="bg-white border-b border-gray-100 px-6 overflow-x-auto no-print">
         <div className="flex gap-1 min-w-max">
           {visibleTabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
@@ -226,11 +229,12 @@ export function DashboardClient({ facility, facilityUser }: Props) {
         {tab === 'notifications' && <NotificationsCenter facilityId={facility.id} />}
         {tab === 'patients' && <PatientsManager facilityId={facility.id} />}
         {tab === 'billing' && <BillingManager facilityId={facility.id} currentUser={facilityUser} />}
-        {tab === 'reports' && <ReportingManager facilityId={facility.id} />}
+        {tab === 'reports' && <ReportingManager facilityId={facility.id} facility={facility} />}
         {tab === 'staff' && <StaffManager facilityId={facility.id} />}
+        {tab === 'settings' && <SettingsManager facility={facility} />}
         {tab === 'front_desk' && <FrontDeskManager facilityId={facility.id} currentUser={facilityUser} onDataChange={() => setBadgeRefreshTrigger(t => t + 1)} />}
         {tab === 'vitals' && <VitalsManager facilityId={facility.id} currentUser={facilityUser} onDataChange={() => setBadgeRefreshTrigger(t => t + 1)} />}
-        {tab !== 'overview' && tab !== 'inventory' && tab !== 'procurement' && tab !== 'dispensing' && tab !== 'notifications' && tab !== 'patients' && tab !== 'billing' && tab !== 'reports' && tab !== 'staff' && tab !== 'front_desk' && tab !== 'vitals' && (
+        {tab !== 'overview' && tab !== 'inventory' && tab !== 'procurement' && tab !== 'dispensing' && tab !== 'notifications' && tab !== 'patients' && tab !== 'billing' && tab !== 'reports' && tab !== 'staff' && tab !== 'front_desk' && tab !== 'vitals' && tab !== 'settings' && (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-4">🏗️</div>
             <div className="font-bold text-gray-900 mb-2">{ALL_TABS.find(t => t.key === tab)?.label} module</div>

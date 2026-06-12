@@ -144,7 +144,14 @@ export function InventoryManager({ facilityId }: Props) {
 
   const lowStockCount = supplies.filter(s => s.current_stock <= s.reorder_point && s.reorder_point > 0).length
   const totalItems = supplies.length
-  const totalValue = supplies.reduce((sum, s) => sum + (s.unit_cost ?? 0) * s.current_stock, 0)
+  // unit_cost is the cost of one RECEIVED unit (e.g. a pack of 50), but
+  // current_stock is tracked in ISSUE units (e.g. pieces) — derive
+  // cost-per-issue-unit before valuing stock.
+  const totalValue = supplies.reduce((sum, s) => {
+    const conversionFactor = s.conversion_factor || 1
+    const costPerIssueUnit = (s.unit_cost ?? 0) / conversionFactor
+    return sum + costPerIssueUnit * s.current_stock
+  }, 0)
 
   const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-sky-400 transition-colors bg-white'
   const labelClass = 'block text-xs uppercase tracking-widest text-gray-400 mb-1.5 font-medium'

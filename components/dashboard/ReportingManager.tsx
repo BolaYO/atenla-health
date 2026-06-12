@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { ReportExportBar } from '@/components/dashboard/ReportExportBar'
+import { ReportPrintHeader } from '@/components/dashboard/ReportPrintHeader'
 
 interface Props {
   facilityId: string
+  facility: { name: string; logo_url?: string | null }
 }
 
 interface ReconRow {
@@ -33,7 +36,8 @@ interface CostAuditRow {
   marginPct: number | null
 }
 
-export function ReportingManager({ facilityId }: Props) {
+export function ReportingManager({ facilityId, facility }: Props) {
+  const [reportType, setReportType] = useState<'overview' | 'billing' | 'inventory' | 'patients'>('overview')
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'custom'>('month')
   const [customFrom, setCustomFrom] = useState(() => {
     const d = new Date()
@@ -46,6 +50,16 @@ export function ReportingManager({ facilityId }: Props) {
   const [costAuditRows, setCostAuditRows] = useState<CostAuditRow[]>([])
   const [spillageRows, setSpillageRows] = useState<SpillageRow[]>([])
   const [revenue, setRevenue] = useState({ billed: 0, collected: 0, outstanding: 0, visitCount: 0 })
+
+  // Billing Summary report
+  const [billingByDept, setBillingByDept] = useState<{ department: string; billed: number; count: number }[]>([])
+  const [paymentsByMethod, setPaymentsByMethod] = useState<{ method: string; total: number; count: number }[]>([])
+
+  // Inventory Snapshot report (point-in-time, not date-filtered)
+  const [inventorySnapshot, setInventorySnapshot] = useState<{ name: string; department: string; quantity: number; unit: string; unitCost: number; value: number }[]>([])
+
+  // Patients report
+  const [patientsReport, setPatientsReport] = useState<{ name: string; patientNumber: string; visits: number; totalBilled: number; lastVisit: string }[]>([])
 
   function getRange(): [Date, Date] {
     const now = new Date()
@@ -89,10 +103,24 @@ export function ReportingManager({ facilityId }: Props) {
         .eq('facility_id', facilityId)
         .eq('is_active', true),
       supabase.from('health_visits')
-        .select('total_amount, amount_paid, outstanding, visit_date')
+        .select('total_amount, amount_paid, outstanding, visit_date, patient_id, patient_name')
         .eq('facility_id', facilityId)
         .gte('visit_date', from.toISOString().split('T')[0])
         .lt('visit_date', to.toISOString().split('T')[0]),
+    ])
+
+    const [{ data: payments }, { data: supplies }, { data: patients }] = await Promise.all([
+      supabase.from('health_payments')
+        .select('amount, payment_method, paid_at')
+        .eq('facility_id', facilityId)
+        .gte('paid_at', from.toISOString())
+        .lt('paid_at', to.toISOString()),
+      supabase.from('health_supplies')
+        .select('name, department, current_stock, unit_of_issue, unit_cost, conversion_factor')
+        .eq('facility_id', facilityId),
+      supabase.from('health_patients')
+        .select('id, patient_number')
+        .eq('facility_id', facilityId),
     ])
 
     // --- Reconciliation: procedure usage vs billed services ---
@@ -207,6 +235,68 @@ export function ReportingManager({ facilityId }: Props) {
     }
     setRevenue({ billed, collected, outstanding, visitCount: (visits ?? []).length })
 
+    // --- Billing Summary: billed amount by department, payments by method ---
+    const deptMap = new Map<string, { billed: number; count: number }>()
+    for (const item of visitItems ?? []) {
+      const visit = (item as any).visit
+      if (!visit) continue
+      const vDate = new Date(visit.visit_date)
+      if (vDate < from || vDate >= to) continue
+      const itemDepartment = item.department ?? visit.department
+      const price = priceMap.get(`${itemDepartment}::${(item.service_name ?? '').toLowerCase()}`) ?? 0
+      const entry = deptMap.get(itemDepartment) ?? { billed: 0, count: 0 }
+      entry.billed += price * (item.quantity ?? 1)
+      entry.count += item.quantity ?? 1
+      deptMap.set(itemDepartment, entry)
+    }
+    setBillingByDept(Array.from(deptMap.entries()).map(([department, v]) => ({ department, ...v })).sort((a, b) => b.billed - a.billed))
+
+    const methodMap = new Map<string, { total: number; count: number }>()
+    for (const p of payments ?? []) {
+      const method = p.payment_method || 'Unspecified'
+      const entry = methodMap.get(method) ?? { total: 0, count: 0 }
+      entry.total += p.amount ?? 0
+      entry.count += 1
+      methodMap.set(method, entry)
+    }
+    setPaymentsByMethod(Array.from(methodMap.entries()).map(([method, v]) => ({ method, ...v })).sort((a, b) => b.total - a.total))
+
+    // --- Inventory Snapshot: current stock levels and value (point-in-time, not date-filtered) ---
+    // current_stock is tracked in ISSUE units (e.g. pieces), but unit_cost is the
+    // cost of one RECEIVED unit (e.g. a pack of 50). Derive cost-per-issue-unit
+    // before valuing stock — same fix as the Cost Audit report.
+    setInventorySnapshot((supplies ?? []).map(s => {
+      const conversionFactor = s.conversion_factor || 1
+      const costPerIssueUnit = (s.unit_cost ?? 0) / conversionFactor
+      return {
+        name: s.name,
+        department: s.department,
+        quantity: s.current_stock ?? 0,
+        unit: s.unit_of_issue ?? '',
+        unitCost: costPerIssueUnit,
+        value: (s.current_stock ?? 0) * costPerIssueUnit,
+      }
+    }).sort((a, b) => b.value - a.value))
+
+    // --- Patients: visits and billing per patient in the period ---
+    const patientMap = new Map<string, { name: string; visits: number; totalBilled: number; lastVisit: string }>()
+    for (const v of visits ?? []) {
+      if (!v.patient_id) continue
+      const entry = patientMap.get(v.patient_id) ?? { name: v.patient_name ?? 'Unknown', visits: 0, totalBilled: 0, lastVisit: v.visit_date }
+      entry.visits += 1
+      entry.totalBilled += v.total_amount ?? 0
+      if (v.visit_date > entry.lastVisit) entry.lastVisit = v.visit_date
+      patientMap.set(v.patient_id, entry)
+    }
+    const patientNumberMap = new Map((patients ?? []).map(p => [p.id, p.patient_number ?? '']))
+    setPatientsReport(Array.from(patientMap.entries()).map(([id, v]) => ({
+      name: v.name,
+      patientNumber: patientNumberMap.get(id) ?? '',
+      visits: v.visits,
+      totalBilled: v.totalBilled,
+      lastVisit: v.lastVisit,
+    })).sort((a, b) => b.visits - a.visits))
+
     setLoading(false)
   }
 
@@ -215,9 +305,32 @@ export function ReportingManager({ facilityId }: Props) {
 
   if (loading) return <div className="text-center py-12 text-gray-400 text-sm">Loading reports...</div>
 
+  const REPORT_TYPES: { key: typeof reportType; label: string }[] = [
+    { key: 'overview', label: 'Operations Overview' },
+    { key: 'billing', label: 'Billing Summary' },
+    { key: 'inventory', label: 'Inventory Snapshot' },
+    { key: 'patients', label: 'Patients' },
+  ]
+
+  const [rangeFrom, rangeTo] = getRange()
+  const fmtDate = (d: Date) => d.toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })
+  const dateRangeLabel = reportType === 'inventory'
+    ? `As of ${fmtDate(new Date())}`
+    : `${fmtDate(rangeFrom)} – ${fmtDate(new Date(rangeTo.getTime() - 1))}`
+
   return (
     <div>
-      <div className="flex gap-2 mb-6 flex-wrap items-center">
+      <div className="flex gap-1 mb-4 flex-wrap no-print">
+        {REPORT_TYPES.map(r => (
+          <button key={r.key} onClick={() => setReportType(r.key)}
+            className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (reportType === r.key ? 'text-white' : 'bg-gray-100 text-gray-600')}
+            style={reportType === r.key ? { background: '#0EA5E9' } : undefined}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex gap-2 mb-6 flex-wrap items-center no-print">
         {(['today', 'week', 'month', 'custom'] as const).map(f => (
           <button key={f} onClick={() => setDateFilter(f)}
             className={'px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-colors ' + (dateFilter === f ? 'text-white' : 'bg-gray-100 text-gray-600')}
@@ -234,6 +347,160 @@ export function ReportingManager({ facilityId }: Props) {
         )}
       </div>
 
+      {/* ===== Billing Summary ===== */}
+      {reportType === 'billing' && (
+        <div>
+          <div className="font-semibold text-gray-900 mb-1">Billing Summary</div>
+          <div className="text-xs text-gray-400 mb-4">Charges billed by department, and payments collected by method, for the selected period.</div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-1">Total Billed</div>
+              <div className="text-2xl font-black text-gray-900">₦{revenue.billed.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-1">Collected</div>
+              <div className="text-2xl font-black text-gray-900">₦{revenue.collected.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <div className="text-xs text-gray-400 uppercase tracking-widest font-medium mb-1">Outstanding</div>
+              <div className="text-2xl font-black" style={{ color: revenue.outstanding > 0 ? '#f59e0b' : '#111827' }}>₦{revenue.outstanding.toLocaleString()}</div>
+            </div>
+          </div>
+
+          <div className="report-section mb-8" id="billing-by-dept">
+            <ReportPrintHeader id="billing-by-dept-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+              title="Billing Summary - By Department" dateRangeLabel={dateRangeLabel} />
+            <div className="font-semibold text-gray-900 mb-3">By Department</div>
+            <ReportExportBar filename="billing_by_department" title="Billing Summary - By Department" sectionId="billing-by-dept"
+              columns={['Department', 'Items Billed', 'Amount']}
+              rows={billingByDept.map(r => [r.department, r.count, r.billed])} />
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {billingByDept.length === 0 ? (
+                <div className="text-center py-10 text-gray-400 text-sm">No charges billed in this period.</div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {billingByDept.map((r, i) => (
+                    <div key={i} className="px-4 py-3 flex items-center justify-between text-sm">
+                      <span className="font-medium text-gray-900">{r.department}</span>
+                      <span className="text-gray-500">{r.count} item{r.count !== 1 ? 's' : ''}</span>
+                      <span className="font-semibold text-gray-900">₦{r.billed.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="report-section" id="payments-by-method">
+            <ReportPrintHeader id="payments-by-method-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+              title="Billing Summary - Payments by Method" dateRangeLabel={dateRangeLabel} />
+            <div className="font-semibold text-gray-900 mb-3">Payments by Method</div>
+            <ReportExportBar filename="payments_by_method" title="Billing Summary - Payments by Method" sectionId="payments-by-method"
+              columns={['Method', 'Payments', 'Total']}
+              rows={paymentsByMethod.map(r => [r.method, r.count, r.total])} />
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {paymentsByMethod.length === 0 ? (
+                <div className="text-center py-10 text-gray-400 text-sm">No payments recorded in this period.</div>
+              ) : (
+                <div className="divide-y divide-gray-50">
+                  {paymentsByMethod.map((r, i) => (
+                    <div key={i} className="px-4 py-3 flex items-center justify-between text-sm">
+                      <span className="font-medium text-gray-900 capitalize">{r.method}</span>
+                      <span className="text-gray-500">{r.count} payment{r.count !== 1 ? 's' : ''}</span>
+                      <span className="font-semibold text-gray-900">₦{r.total.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Inventory Snapshot ===== */}
+      {reportType === 'inventory' && (
+        <div className="report-section" id="inventory-snapshot">
+          <ReportPrintHeader id="inventory-snapshot-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+            title="Inventory Snapshot" dateRangeLabel={dateRangeLabel} />
+          <div className="font-semibold text-gray-900 mb-1">Inventory Snapshot</div>
+          <div className="text-xs text-gray-400 mb-4">Current stock levels and value, as of now, not affected by the date filter above.</div>
+          <ReportExportBar filename="inventory_snapshot" title="Inventory Snapshot" sectionId="inventory-snapshot"
+            columns={['Item', 'Department', 'Quantity', 'Unit', 'Unit Cost', 'Value']}
+            rows={inventorySnapshot.map(r => [r.name, r.department, r.quantity, r.unit, r.unitCost, r.value])} />
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            {inventorySnapshot.length === 0 ? (
+              <div className="text-center py-16 text-gray-400 text-sm">No inventory items found.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      {['Item', 'Department', 'Quantity', 'Unit', 'Unit Cost', 'Value'].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs uppercase tracking-widest text-gray-400 font-medium">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inventorySnapshot.map((r, i) => (
+                      <tr key={i} className="border-b border-gray-50 last:border-0 text-sm hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{r.name}</td>
+                        <td className="px-4 py-3 text-gray-500">{r.department}</td>
+                        <td className="px-4 py-3 text-gray-700">{r.quantity}</td>
+                        <td className="px-4 py-3 text-gray-500">{r.unit}</td>
+                        <td className="px-4 py-3 text-gray-500">₦{r.unitCost.toLocaleString()}</td>
+                        <td className="px-4 py-3 font-semibold text-gray-900">₦{r.value.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-200">
+                      <td colSpan={5} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">Total Value</td>
+                      <td className="px-4 py-3 text-sm font-black text-gray-900">₦{inventorySnapshot.reduce((s, r) => s + r.value, 0).toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Patients ===== */}
+      {reportType === 'patients' && (
+        <div className="report-section" id="patients-report">
+          <ReportPrintHeader id="patients-report-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+            title="Patients Report" dateRangeLabel={dateRangeLabel} />
+          <div className="font-semibold text-gray-900 mb-1">Patients</div>
+          <div className="text-xs text-gray-400 mb-4">Patients with visits in the selected period, with visit count and total billed.</div>
+          <ReportExportBar filename="patients_report" title="Patients Report" sectionId="patients-report"
+            columns={['Patient', 'Patient Number', 'Visits', 'Total Billed', 'Last Visit']}
+            rows={patientsReport.map(r => [r.name, r.patientNumber, r.visits, r.totalBilled, r.lastVisit])} />
+          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+            {patientsReport.length === 0 ? (
+              <div className="text-center py-16 text-gray-400 text-sm">No patient visits in this period.</div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {patientsReport.map((r, i) => (
+                  <div key={i} className="px-4 py-3 flex items-center justify-between text-sm">
+                    <div>
+                      <span className="font-medium text-gray-900">{r.name}</span>
+                      {r.patientNumber && <span className="text-xs text-gray-400 ml-2">({r.patientNumber})</span>}
+                    </div>
+                    <span className="text-gray-500">{r.visits} visit{r.visits !== 1 ? 's' : ''}</span>
+                    <span className="text-gray-400">Last: {r.lastVisit}</span>
+                    <span className="font-semibold text-gray-900">₦{r.totalBilled.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Operations Overview (existing reconciliation/cost-audit/spillage) ===== */}
+      {reportType === 'overview' && (
+      <>
       {/* Revenue summary */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
@@ -257,9 +524,14 @@ export function ReportingManager({ facilityId }: Props) {
       </div>
 
       {/* Reconciliation table */}
-      <div className="mb-6">
+      <div className="report-section mb-6" id="reconciliation-report">
+        <ReportPrintHeader id="reconciliation-report-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+          title="Procedure Reconciliation Report" dateRangeLabel={dateRangeLabel} />
         <div className="font-semibold text-gray-900 mb-3">Usage vs Billing - Procedure Reconciliation</div>
         <div className="text-xs text-gray-400 mb-3">Procedures logged in Usage Log compared against matching charges in Billing, for the selected period. A positive gap means the procedure was performed but not billed.</div>
+        <ReportExportBar filename="reconciliation_report" title="Procedure Reconciliation Report" sectionId="reconciliation-report"
+          columns={['Department', 'Procedure', 'Performed', 'Billed', 'Gap', 'Unit Price', 'Gap Value']}
+          rows={reconRows.map(r => [r.department, r.name, r.usageCount, r.billedCount, r.gap, r.unitPrice, r.gapValue])} />
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           {reconRows.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">No procedure usage logged for this period.</div>
@@ -296,15 +568,20 @@ export function ReportingManager({ facilityId }: Props) {
         </div>
         {reconRows.some(r => r.unitPrice === 0 && r.gap > 0) && (
           <div className="text-xs text-amber-600 mt-2">
-            Some procedures above have no price set in Services &amp; Pricing - their potential loss can't be calculated yet. Add a price to see the full picture.
+            Some procedures above have no price set in Services &amp; Pricing, their potential loss can't be calculated yet. Add a price to see the full picture.
           </div>
         )}
       </div>
 
       {/* Cost audit */}
-      <div className="mb-6">
+      <div className="report-section mb-6" id="cost-audit-report">
+        <ReportPrintHeader id="cost-audit-report-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+          title="Procedure Cost Audit Report" dateRangeLabel={dateRangeLabel} />
         <div className="font-semibold text-gray-900 mb-3">Procedure Cost Audit</div>
         <div className="text-xs text-gray-400 mb-3">For each procedure, the average cost of consumables actually used (from procurement unit costs) compared against its price. A negative margin means the procedure costs more in materials than it's priced for.</div>
+        <ReportExportBar filename="cost_audit_report" title="Procedure Cost Audit Report" sectionId="cost-audit-report"
+          columns={['Department', 'Procedure', 'Instances', 'Avg Cost', 'Price', 'Margin', 'Margin %']}
+          rows={costAuditRows.map(r => [r.department, r.name, r.instanceCount, r.avgCost, r.price, r.margin ?? '', r.marginPct ?? ''])} />
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           {costAuditRows.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">No procedure cost data for this period.</div>
@@ -341,19 +618,24 @@ export function ReportingManager({ facilityId }: Props) {
         </div>
         {costAuditRows.some(r => r.price === 0) && (
           <div className="text-xs text-amber-600 mt-2">
-            Procedures with no price set show "-" for margin - add a price in Services &amp; Pricing to see the full picture.
+            Procedures with no price set show "-" for margin, add a price in Services &amp; Pricing to see the full picture.
           </div>
         )}
         {costAuditRows.some(r => r.avgCost === 0 && r.price > 0) && (
           <div className="text-xs text-gray-400 mt-2">
-            Procedures showing ₦0 cost had no consumables logged against them - margin shown is the full price, not a true picture of cost.
+            Procedures showing ₦0 cost had no consumables logged against them, margin shown is the full price, not a true picture of cost.
           </div>
         )}
       </div>
 
       {/* Spillage / damage rollup */}
-      <div>
+      <div className="report-section" id="spillage-report">
+        <ReportPrintHeader id="spillage-report-print-header" facilityName={facility.name} logoUrl={facility.logo_url}
+          title="Spillage & Damage Report" dateRangeLabel={dateRangeLabel} />
         <div className="font-semibold text-gray-900 mb-3">Spillage &amp; Damage - By Department</div>
+        <ReportExportBar filename="spillage_report" title="Spillage & Damage Report" sectionId="spillage-report"
+          columns={['Department', 'Entries', 'Total Quantity']}
+          rows={spillageRows.map(r => [r.department, r.count, r.totalQuantity])} />
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           {spillageRows.length === 0 ? (
             <div className="text-center py-10 text-gray-400 text-sm">No spillage or damage logged for this period.</div>
@@ -381,6 +663,8 @@ export function ReportingManager({ facilityId }: Props) {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
