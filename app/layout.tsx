@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Atenla Health - Hospital & Clinic Operations for Nigerian Healthcare Facilities',
+  title: 'Atenla Health - Business Operations for Nigerian Healthcare Facilities',
   description: 'Inventory, billing, patient records, and staff in one platform built for how Nigerian hospitals, clinics, and diagnostic centers actually operate.',
   keywords: ['hospital management Nigeria', 'clinic software', 'diagnostic center software', 'patient billing Nigeria', 'hospital inventory', 'EMR Nigeria', 'Lagos hospital software'],
   authors: [{ name: 'Itan Household Essentials Ltd', url: 'https://www.health.atenla.ng' }],
@@ -12,14 +12,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     url: 'https://www.health.atenla.ng',
-    title: 'Atenla Health - Hospital & Clinic Operations Platform',
+    title: 'Atenla Health - Healthcare Business Operations Platform',
     description: 'Inventory, billing, patient records, and staff in one platform built for how Nigerian hospitals, clinics, and diagnostic centers actually operate.',
     siteName: 'Atenla Health',
     locale: 'en_NG',
   },
   twitter: {
     card: 'summary',
-    title: 'Atenla Health - Hospital & Clinic Operations Platform',
+    title: 'Atenla Health - Healthcare Business Operations Platform',
     description: 'Inventory, billing, patient records, and staff for Nigerian healthcare facilities.',
   },
   icons: {
