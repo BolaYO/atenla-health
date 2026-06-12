@@ -273,6 +273,26 @@ export function UsageLogManager({ facilityId, currentUser }: Props) {
       for (const row of rowsToInsert) {
         await supabase.from('health_usage_logs').insert(row)
       }
+
+      // If this department produces results (Lab, Imaging, Pathology, etc.),
+      // create a pending result record so it shows up on the Results tab.
+      const { data: deptRow } = await supabase.from('health_departments')
+        .select('produces_results')
+        .eq('facility_id', facilityId)
+        .eq('name', department)
+        .maybeSingle()
+
+      if (deptRow?.produces_results) {
+        await supabase.from('health_results').insert({
+          facility_id: facilityId,
+          procedure_instance_id: procedureInstanceId,
+          visit_id: visitId,
+          patient_id: finalPatientId,
+          department,
+          procedure_name: procedureName.trim(),
+          status: 'pending',
+        })
+      }
     } else {
       let finalPatientId: string | null = null
       let finalPatientName: string | null = null
@@ -409,7 +429,7 @@ export function UsageLogManager({ facilityId, currentUser }: Props) {
                   {USAGE_TYPES.map(t => (
                     <button key={t.value} onClick={() => setUsageType(t.value)}
                       className={'px-3 py-2 rounded-xl text-sm font-semibold transition-colors ' + (usageType === t.value ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                      style={usageType === t.value ? { background: t.value === 'spillage_damage' ? '#f59e0b' : t.value === 'emergency' ? '#dc2626' : '#0EA5E9' } : undefined}>
+                      style={usageType === t.value ? { background: t.value === 'spillage_damage' ? '#f59e0b' : t.value === 'emergency' ? '#dc2626' : 'var(--brand-color)' } : undefined}>
                       {t.label}
                     </button>
                   ))}
@@ -472,7 +492,7 @@ export function UsageLogManager({ facilityId, currentUser }: Props) {
                           onChange={e => setNewPatient(p => ({ ...p, phone: e.target.value }))} />
                       </div>
                       <button onClick={() => setShowNewPatient(false)} className="text-xs text-gray-500 hover:underline">
-                        Cancel - select existing patient instead
+                        Cancel, select existing patient instead
                       </button>
                     </div>
                   )}
@@ -481,7 +501,7 @@ export function UsageLogManager({ facilityId, currentUser }: Props) {
 
               {usageType === 'procedure' && (
                 <div className="mb-4">
-                  <label className={labelClass}>Consumables Used (internal audit ; optional but recommended)</label>
+                  <label className={labelClass}>Consumables Used (internal audit - optional but recommended)</label>
                   <div className="text-xs text-gray-400 mb-2">Everything used to carry out this procedure ; gloves, gauze, iodine, thread, etc. These won't appear on the patient's bill; the procedure itself is what's billed.</div>
                   <div className="space-y-2">
                     {consumables.map((c, idx) => (
@@ -525,7 +545,7 @@ export function UsageLogManager({ facilityId, currentUser }: Props) {
 
               <button onClick={submitLog} disabled={!canSubmit}
                 className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-                style={{ background: '#0EA5E9' }}>
+                style={{ background: 'var(--brand-color)' }}>
                 {saving ? 'Logging...' : 'Log Usage'}
               </button>
             </div>

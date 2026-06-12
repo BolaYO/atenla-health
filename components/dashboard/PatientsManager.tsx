@@ -235,7 +235,7 @@ export function PatientsManager({ facilityId }: Props) {
         {!showForm && (
           <button onClick={() => { resetForm(); setShowForm(true) }}
             className="px-4 py-2 rounded-xl text-white text-sm font-bold"
-            style={{ background: '#0EA5E9' }}>
+            style={{ background: 'var(--brand-color)' }}>
             + Register Patient
           </button>
         )}
@@ -307,7 +307,7 @@ export function PatientsManager({ facilityId }: Props) {
           <div className="flex gap-2">
             <button onClick={savePatient} disabled={saving || !form.first_name.trim() || !form.last_name.trim()}
               className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-              style={{ background: '#0EA5E9' }}>
+              style={{ background: 'var(--brand-color)' }}>
               {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Register Patient'}
             </button>
             <button onClick={resetForm} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600">Cancel</button>

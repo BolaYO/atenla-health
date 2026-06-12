@@ -198,7 +198,7 @@ export function FrontDeskManager({ facilityId, currentUser, onDataChange }: Prop
             (!showNewPatient && !patientId) ||
             (showNewPatient && (!newPatient.first_name.trim() || !newPatient.last_name.trim()))
           }
-          className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+          className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
           {saving ? 'Checking in...' : 'Check In'}
         </button>
       </div>

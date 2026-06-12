@@ -7,6 +7,7 @@ interface DepartmentRef {
   id: string
   name: string
   is_active: boolean
+  produces_results: boolean
 }
 
 interface StaffRef {
@@ -91,6 +92,12 @@ export function StaffManager({ facilityId }: Props) {
     if (!confirm('Remove this department? Staff assigned to it will lose access to it.')) return
     const supabase = createClient()
     await supabase.from('health_departments').update({ is_active: false }).eq('id', id)
+    await loadData()
+  }
+
+  async function toggleProducesResults(d: DepartmentRef) {
+    const supabase = createClient()
+    await supabase.from('health_departments').update({ produces_results: !d.produces_results }).eq('id', d.id)
     await loadData()
   }
 
@@ -224,12 +231,12 @@ export function StaffManager({ facilityId }: Props) {
       <div className="flex gap-1 mb-6 flex-wrap">
         <button onClick={() => setView('staff')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'staff' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'staff' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'staff' ? { background: 'var(--brand-color)' } : undefined}>
           Staff
         </button>
         <button onClick={() => setView('departments')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'departments' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'departments' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'departments' ? { background: 'var(--brand-color)' } : undefined}>
           Departments
         </button>
       </div>
@@ -242,7 +249,7 @@ export function StaffManager({ facilityId }: Props) {
             <div className="flex gap-2">
               <input className={inputClass} placeholder="e.g. Imaging, Surgery, Phlebotomy" value={newDeptName} onChange={e => setNewDeptName(e.target.value)} />
               <button onClick={addDepartment} disabled={saving || !newDeptName.trim()}
-                className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50 whitespace-nowrap" style={{ background: '#0EA5E9' }}>
+                className="px-4 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50 whitespace-nowrap" style={{ background: 'var(--brand-color)' }}>
                 + Add
               </button>
             </div>
@@ -254,9 +261,15 @@ export function StaffManager({ facilityId }: Props) {
             ) : (
               <div className="divide-y divide-gray-50">
                 {departments.map(d => (
-                  <div key={d.id} className="px-4 py-3 flex items-center justify-between text-sm">
+                  <div key={d.id} className="px-4 py-3 flex items-center justify-between text-sm gap-3">
                     <span className="font-medium text-gray-900">{d.name}</span>
-                    <button onClick={() => removeDepartment(d.id)} className="text-xs text-red-500 hover:underline">Remove</button>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+                        <input type="checkbox" checked={d.produces_results} onChange={() => toggleProducesResults(d)} />
+                        Produces results
+                      </label>
+                      <button onClick={() => removeDepartment(d.id)} className="text-xs text-red-500 hover:underline">Remove</button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -283,7 +296,7 @@ export function StaffManager({ facilityId }: Props) {
 
           {!showStaffForm && (
             <button onClick={() => { resetStaffForm(); setShowStaffForm(true) }}
-              className="px-4 py-2 rounded-xl text-white text-sm font-bold mb-4" style={{ background: '#0EA5E9' }}>
+              className="px-4 py-2 rounded-xl text-white text-sm font-bold mb-4" style={{ background: 'var(--brand-color)' }}>
               + Add Staff
             </button>
           )}
@@ -334,7 +347,7 @@ export function StaffManager({ facilityId }: Props) {
                       ) : departments.map(d => (
                         <button key={d.id} type="button" onClick={() => toggleDepartment(d.name)}
                           className={'px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ' + (staffForm.allowed_departments.includes(d.name) ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                          style={staffForm.allowed_departments.includes(d.name) ? { background: '#0EA5E9' } : undefined}>
+                          style={staffForm.allowed_departments.includes(d.name) ? { background: 'var(--brand-color)' } : undefined}>
                           {d.name}
                         </button>
                       ))}
@@ -347,7 +360,7 @@ export function StaffManager({ facilityId }: Props) {
                       {MODULES.map(m => (
                         <button key={m.key} type="button" onClick={() => toggleModule(m.key)}
                           className={'px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ' + (staffForm.allowed_modules.includes(m.key) ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                          style={staffForm.allowed_modules.includes(m.key) ? { background: '#0EA5E9' } : undefined}>
+                          style={staffForm.allowed_modules.includes(m.key) ? { background: 'var(--brand-color)' } : undefined}>
                           {m.label}
                         </button>
                       ))}
@@ -360,7 +373,7 @@ export function StaffManager({ facilityId }: Props) {
 
               <div className="flex gap-2">
                 <button onClick={saveStaff} disabled={saving || !staffForm.name.trim() || !staffForm.role.trim()}
-                  className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+                  className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
                   {saving ? 'Saving...' : editingStaffId ? 'Save Changes' : 'Create Staff Account'}
                 </button>
                 <button onClick={resetStaffForm} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600">Cancel</button>

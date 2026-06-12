@@ -18,7 +18,7 @@ const labelClass = 'block text-xs uppercase tracking-widest text-gray-400 mb-1.5
 
 export function SettingsManager({ facility }: Props) {
   const [logoUrl, setLogoUrl] = useState(facility.logo_url ?? '')
-  const [brandColor, setBrandColor] = useState(facility.brand_color ?? '#0EA5E9')
+  const [brandColor, setBrandColor] = useState(facility.brand_color ?? 'var(--brand-color)')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -101,7 +101,7 @@ export function SettingsManager({ facility }: Props) {
         </div>
 
         <button onClick={handleSave} disabled={saving || uploading}
-          className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+          className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
           {saving ? 'Saving...' : saved ? 'Saved ✓' : 'Save Branding'}
         </button>
       </div>

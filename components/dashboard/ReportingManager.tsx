@@ -324,7 +324,7 @@ export function ReportingManager({ facilityId, facility }: Props) {
         {REPORT_TYPES.map(r => (
           <button key={r.key} onClick={() => setReportType(r.key)}
             className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (reportType === r.key ? 'text-white' : 'bg-gray-100 text-gray-600')}
-            style={reportType === r.key ? { background: '#0EA5E9' } : undefined}>
+            style={reportType === r.key ? { background: 'var(--brand-color)' } : undefined}>
             {r.label}
           </button>
         ))}
@@ -334,7 +334,7 @@ export function ReportingManager({ facilityId, facility }: Props) {
         {(['today', 'week', 'month', 'custom'] as const).map(f => (
           <button key={f} onClick={() => setDateFilter(f)}
             className={'px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-colors ' + (dateFilter === f ? 'text-white' : 'bg-gray-100 text-gray-600')}
-            style={dateFilter === f ? { background: '#0EA5E9' } : undefined}>
+            style={dateFilter === f ? { background: 'var(--brand-color)' } : undefined}>
             {f === 'week' ? 'This Week' : f === 'month' ? 'This Month' : f === 'today' ? 'Today' : 'Custom'}
           </button>
         ))}
@@ -552,7 +552,7 @@ export function ReportingManager({ facilityId, facility }: Props) {
                       <td className="px-4 py-3 font-medium text-gray-900">{r.name}</td>
                       <td className="px-4 py-3 text-gray-700">{r.usageCount}</td>
                       <td className="px-4 py-3 text-gray-700">{r.billedCount}</td>
-                      <td className="px-4 py-3 font-semibold" style={{ color: r.gap > 0 ? '#dc2626' : r.gap < 0 ? '#0EA5E9' : '#9ca3af' }}>
+                      <td className="px-4 py-3 font-semibold" style={{ color: r.gap > 0 ? '#dc2626' : r.gap < 0 ? 'var(--brand-color)' : '#9ca3af' }}>
                         {r.gap > 0 ? `+${r.gap}` : r.gap}
                       </td>
                       <td className="px-4 py-3 text-gray-500">{r.unitPrice > 0 ? `₦${r.unitPrice.toLocaleString()}` : '-'}</td>

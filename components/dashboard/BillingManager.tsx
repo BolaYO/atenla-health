@@ -108,7 +108,7 @@ function DispatchPanel({
           <input type="number" className={inputClass + ' max-w-40'} value={linkAmount} onChange={e => setLinkAmount(e.target.value)} />
         </div>
         <button onClick={() => onGenerateLink(visit)} disabled={generatingLink || (!patient?.email && !dispatchEmail.trim()) || !linkAmount || parseFloat(linkAmount) <= 0}
-          className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+          className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
           {generatingLink ? 'Generating...' : visit.payment_link_url ? 'Generate New Link' : 'Generate Payment Link'}
         </button>
         {visit.payment_link_url && (
@@ -548,22 +548,22 @@ export function BillingManager({ facilityId, currentUser }: Props) {
       <div className="flex gap-1 mb-6 flex-wrap">
         <button onClick={() => setView('new')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'new' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'new' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'new' ? { background: 'var(--brand-color)' } : undefined}>
           Generate Bill
         </button>
         <button onClick={() => setView('visits')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'visits' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'visits' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'visits' ? { background: 'var(--brand-color)' } : undefined}>
           Visits
         </button>
         <button onClick={() => setView('payments')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'payments' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'payments' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'payments' ? { background: 'var(--brand-color)' } : undefined}>
           Payments
         </button>
         <button onClick={() => setView('services')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'services' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'services' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'services' ? { background: 'var(--brand-color)' } : undefined}>
           Services &amp; Pricing
         </button>
       </div>
@@ -576,7 +576,7 @@ export function BillingManager({ facilityId, currentUser }: Props) {
             {(['today', 'week', 'month', 'custom'] as const).map(f => (
               <button key={f} onClick={() => setDateFilter(f)}
                 className={'px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-colors ' + (dateFilter === f ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                style={dateFilter === f ? { background: '#0EA5E9' } : undefined}>
+                style={dateFilter === f ? { background: 'var(--brand-color)' } : undefined}>
                 {f === 'week' ? 'This Week' : f === 'month' ? 'This Month' : f === 'today' ? 'Today' : 'Custom'}
               </button>
             ))}
@@ -727,7 +727,7 @@ export function BillingManager({ facilityId, currentUser }: Props) {
 
           <div className="flex gap-2">
             <button onClick={generateBill} disabled={saving || !patientId || (!billingVisitId && !department) || lines.every(l => !l.service_id)}
-              className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+              className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
               {saving ? 'Generating...' : 'Generate Bill'}
             </button>
             {billingVisitId && (
@@ -781,7 +781,7 @@ export function BillingManager({ facilityId, currentUser }: Props) {
                   <div className="flex gap-3 mt-2 items-center">
                     {v.status === 'open' ? (
                       <button onClick={() => openGenerateBill(v)}
-                        className="text-xs font-semibold hover:underline" style={{ color: '#0EA5E9' }}>Generate Bill</button>
+                        className="text-xs font-semibold hover:underline" style={{ color: 'var(--brand-color)' }}>Generate Bill</button>
                     ) : (
                       <>
                         {v.outstanding > 0 && (

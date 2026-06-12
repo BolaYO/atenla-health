@@ -305,28 +305,28 @@ export function DispensingManager({ facilityId, currentUser, onDataChange }: Pro
         {hasDepartmentAccess && (
         <button onClick={() => setView('new')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'new' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'new' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'new' ? { background: 'var(--brand-color)' } : undefined}>
           Stock Request
         </button>
         )}
         {hasDepartmentAccess && (
         <button onClick={() => setView('mine')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'mine' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'mine' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'mine' ? { background: 'var(--brand-color)' } : undefined}>
           My Requests {myRequests.length > 0 && `(${myRequests.length})`}
         </button>
         )}
         {hasDepartmentAccess && (
         <button onClick={() => setView('usage')}
           className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'usage' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-          style={view === 'usage' ? { background: '#0EA5E9' } : undefined}>
+          style={view === 'usage' ? { background: 'var(--brand-color)' } : undefined}>
           Usage Log
         </button>
         )}
         {canManage && (
           <button onClick={() => setView('manage')}
             className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (view === 'manage' ? 'text-white' : 'bg-gray-100 text-gray-600')}
-            style={view === 'manage' ? { background: '#0EA5E9' } : undefined}>
+            style={view === 'manage' ? { background: 'var(--brand-color)' } : undefined}>
             Approvals &amp; Release
             {(pendingApproval.length + approvedAwaitingPrep.length + readyForCollection.length) > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-500 text-white text-xs">
@@ -356,7 +356,7 @@ export function DispensingManager({ facilityId, currentUser, onDataChange }: Pro
                 {(['normal', 'urgent'] as const).map(p => (
                   <button key={p} onClick={() => setPriority(p)}
                     className={'px-3 py-2.5 rounded-xl text-sm font-semibold capitalize flex-1 transition-colors ' + (priority === p ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                    style={priority === p ? { background: p === 'urgent' ? '#dc2626' : '#0EA5E9' } : undefined}>
+                    style={priority === p ? { background: p === 'urgent' ? '#dc2626' : 'var(--brand-color)' } : undefined}>
                     {p}
                   </button>
                 ))}
@@ -393,7 +393,7 @@ export function DispensingManager({ facilityId, currentUser, onDataChange }: Pro
 
           <button onClick={submitRequest} disabled={saving || !department || items.every(it => !it.supply_id)}
             className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-            style={{ background: '#0EA5E9' }}>
+            style={{ background: 'var(--brand-color)' }}>
             {saving ? 'Submitting...' : 'Submit Request'}
           </button>
         </div>
@@ -424,7 +424,7 @@ export function DispensingManager({ facilityId, currentUser, onDataChange }: Pro
                   <RequestCard key={req.id} req={req} actions={
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => approveRequest(req.id)}
-                        className="px-3 py-1.5 rounded-lg text-white text-xs font-bold" style={{ background: '#0EA5E9' }}>
+                        className="px-3 py-1.5 rounded-lg text-white text-xs font-bold" style={{ background: 'var(--brand-color)' }}>
                         Approve
                       </button>
                       <button onClick={() => rejectRequest(req.id)}

@@ -444,7 +444,7 @@ export function ProcurementManager({ facilityId }: Props) {
         {(['received', 'suppliers'] as const).map(v => (
           <button key={v} onClick={() => setView(v)}
             className={'px-4 py-2 rounded-xl text-sm font-semibold capitalize transition-colors ' + (view === v ? 'text-white' : 'bg-gray-100 text-gray-600')}
-            style={view === v ? { background: '#0EA5E9' } : undefined}>
+            style={view === v ? { background: 'var(--brand-color)' } : undefined}>
             {v === 'received' ? 'Goods Received' : 'Suppliers'}
           </button>
         ))}
@@ -459,7 +459,7 @@ export function ProcurementManager({ facilityId }: Props) {
             {!showForm && (
               <button onClick={() => { resetForm(); setShowForm(true) }}
                 className="px-4 py-2 rounded-xl text-white text-sm font-bold"
-                style={{ background: '#0EA5E9' }}>
+                style={{ background: 'var(--brand-color)' }}>
                 + Log Delivery
               </button>
             )}
@@ -482,7 +482,7 @@ export function ProcurementManager({ facilityId }: Props) {
                     ] as { key: InputMode; label: string }[]).map(m => (
                       <button key={m.key} onClick={() => setInputMode(m.key)}
                         className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ' + (inputMode === m.key ? 'text-white' : 'bg-gray-100 text-gray-600')}
-                        style={inputMode === m.key ? { background: '#0EA5E9' } : undefined}>
+                        style={inputMode === m.key ? { background: 'var(--brand-color)' } : undefined}>
                         {m.label}
                       </button>
                     ))}
@@ -496,7 +496,7 @@ export function ProcurementManager({ facilityId }: Props) {
                       {parseError && <div className="text-xs text-red-500 mb-2">{parseError}</div>}
                       <button onClick={processDocument} disabled={parsing || !pasteText.trim()}
                         className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
-                        style={{ background: '#0EA5E9' }}>
+                        style={{ background: 'var(--brand-color)' }}>
                         {parsing ? 'Reading...' : 'Extract Items'}
                       </button>
                     </div>
@@ -517,7 +517,7 @@ export function ProcurementManager({ facilityId }: Props) {
                       {parseError && <div className="text-xs text-red-500 mb-2">{parseError}</div>}
                       <button onClick={processDocument} disabled={parsing || (!imageBase64 && !pdfBase64)}
                         className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50"
-                        style={{ background: '#0EA5E9' }}>
+                        style={{ background: 'var(--brand-color)' }}>
                         {parsing ? 'Reading...' : 'Extract Items'}
                       </button>
                     </div>
@@ -576,7 +576,7 @@ export function ProcurementManager({ facilityId }: Props) {
                   ] as { key: 'credit' | 'partial' | 'full'; label: string }[]).map(opt => (
                     <button key={opt.key} onClick={() => setPaymentMethod(opt.key)}
                       className={'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ' + (paymentMethod === opt.key ? 'text-white' : 'bg-white border border-gray-200 text-gray-600')}
-                      style={paymentMethod === opt.key ? { background: '#0EA5E9' } : undefined}>
+                      style={paymentMethod === opt.key ? { background: 'var(--brand-color)' } : undefined}>
                       {opt.label}
                     </button>
                   ))}
@@ -734,7 +734,7 @@ export function ProcurementManager({ facilityId }: Props) {
               <div className="flex gap-2">
                 <button onClick={saveGoodsReceived} disabled={saving || (!editingGrId && lines.every(l => !l.item_name.trim()))}
                   className="px-5 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-                  style={{ background: '#0EA5E9' }}>
+                  style={{ background: 'var(--brand-color)' }}>
                   {saving ? 'Saving...' : editingGrId ? 'Save Changes' : 'Save Delivery'}
                 </button>
                 <button onClick={resetForm} className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600">Cancel</button>

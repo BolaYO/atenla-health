@@ -107,7 +107,7 @@ export function SuppliersManager({ facilityId }: Props) {
         <div className="font-semibold text-gray-900">Suppliers</div>
         <button onClick={() => { resetForm(); setShowForm(true) }}
           className="text-xs px-3 py-1.5 rounded-lg text-white font-semibold"
-          style={{ background: '#0EA5E9' }}>
+          style={{ background: 'var(--brand-color)' }}>
           + Add Supplier
         </button>
       </div>
@@ -143,7 +143,7 @@ export function SuppliersManager({ facilityId }: Props) {
           <div className="flex gap-2">
             <button onClick={saveSupplier} disabled={saving || !form.name.trim()}
               className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-              style={{ background: '#0EA5E9' }}>
+              style={{ background: 'var(--brand-color)' }}>
               {saving ? 'Saving...' : editingId ? 'Save' : 'Add Supplier'}
             </button>
             <button onClick={resetForm} className="px-4 py-2 rounded-xl border border-gray-200 text-sm text-gray-600">Cancel</button>

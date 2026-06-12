@@ -34,10 +34,10 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: '#0EA5E9' }}>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4" style={{ background: '#F97316' }}>
             <svg width="28" height="28" viewBox="0 0 56 56" fill="none">
               <path d="M28 8 L44 44 H36 L28 20 L20 44 H12 Z" fill="white"/>
-              <rect x="14" y="32" width="28" height="5" rx="1" fill="#0EA5E9"/>
+              <rect x="14" y="32" width="28" height="5" rx="1" fill="#F97316"/>
             </svg>
           </div>
           <div className="text-2xl font-black text-gray-900">Atenla Health</div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading || !email || !password}
               className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 transition-opacity hover:opacity-90"
-              style={{ background: '#0EA5E9' }}
+              style={{ background: '#F97316' }}
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>

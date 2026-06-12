@@ -14,6 +14,7 @@ import { StaffManager } from '@/components/dashboard/StaffManager'
 import { SettingsManager } from '@/components/dashboard/SettingsManager'
 import { FrontDeskManager } from '@/components/dashboard/FrontDeskManager'
 import { VitalsManager } from '@/components/dashboard/VitalsManager'
+import { OverviewManager } from '@/components/dashboard/OverviewManager'
 
 interface Facility {
   id: string
@@ -143,7 +144,7 @@ export function DashboardClient({ facility, facilityUser }: Props) {
   const roleLabel = facilityUser.role.charAt(0).toUpperCase() + facilityUser.role.slice(1)
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col" style={{ '--brand-color': facility.brand_color || '#F97316' } as React.CSSProperties}>
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-20 no-print">
         <div className="flex items-center gap-3">
@@ -151,12 +152,12 @@ export function DashboardClient({ facility, facilityUser }: Props) {
             <img src={facility.logo_url} alt={facility.name} className="w-8 h-8 rounded-xl object-cover" />
           ) : (
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-sm"
-              style={{ background: '#0EA5E9' }}>
+              style={{ background: 'var(--brand-color)' }}>
               {facility.name.charAt(0)}
             </div>
           )}
           <div>
-            <div className="font-extrabold text-gray-900" style={{ color: '#0EA5E9' }}>{facility.name}</div>
+            <div className="font-extrabold text-gray-900" style={{ color: 'var(--brand-color)' }}>{facility.name}</div>
             <div className="text-xs text-gray-400 uppercase tracking-widest">{facilityUser.name} · {roleLabel}</div>
           </div>
         </div>
@@ -179,7 +180,7 @@ export function DashboardClient({ facility, facilityUser }: Props) {
             <button key={t.key} onClick={() => setTab(t.key)}
               className={'relative px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ' +
                 (tab === t.key ? 'text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-700')}
-              style={tab === t.key ? { borderColor: '#0EA5E9' } : { borderColor: 'transparent' }}>
+              style={tab === t.key ? { borderColor: 'var(--brand-color)' } : { borderColor: 'transparent' }}>
               {t.label}
               {t.key === 'dispensing' && dispensingBadge > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
@@ -204,24 +205,12 @@ export function DashboardClient({ facility, facilityUser }: Props) {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
         {tab === 'overview' && (
-          <div>
-            <div className="text-2xl font-black text-gray-900 mb-2">Welcome, {facilityUser.name}</div>
-            <div className="text-sm text-gray-400 mb-8">{facility.name} · Healthcare Operations Dashboard</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { label: 'Inventory', desc: 'Track supplies and stock levels', tab: 'inventory' as Tab },
-                { label: 'Procurement', desc: 'Manage suppliers and deliveries', tab: 'procurement' as Tab },
-                { label: 'Dispensing', desc: 'Staff requests and approvals', tab: 'dispensing' as Tab },
-                { label: 'Patients', desc: 'Patient records and billing', tab: 'patients' as Tab },
-              ].filter(card => visibleTabs.some(t => t.key === card.tab)).map(card => (
-                <button key={card.tab} onClick={() => setTab(card.tab)}
-                  className="text-left bg-white rounded-2xl border border-gray-100 p-5 hover:border-sky-200 transition-colors group">
-                  <div className="font-bold text-gray-900 mb-1 group-hover:text-sky-600 transition-colors">{card.label}</div>
-                  <div className="text-xs text-gray-400 leading-relaxed">{card.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <OverviewManager
+            facilityId={facility.id}
+            facilityName={facility.name}
+            visibleTabKeys={visibleTabs.map(t => t.key)}
+            onNavigate={(t) => setTab(t as Tab)}
+          />
         )}
         {tab === 'inventory' && <InventoryManager facilityId={facility.id} />}
         {tab === 'procurement' && <ProcurementManager facilityId={facility.id} />}

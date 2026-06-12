@@ -107,7 +107,7 @@ export function VitalsManager({ facilityId, currentUser, onDataChange }: Props) 
                   </div>
                   {recordingVisitId !== v.id && (
                     <button onClick={() => { setRecordingVisitId(v.id); resetVitals(); setRecordingVisitId(v.id) }}
-                      className="text-xs font-semibold hover:underline" style={{ color: '#0EA5E9' }}>
+                      className="text-xs font-semibold hover:underline" style={{ color: 'var(--brand-color)' }}>
                       Record Vitals
                     </button>
                   )}
@@ -148,7 +148,7 @@ export function VitalsManager({ facilityId, currentUser, onDataChange }: Props) 
                     <input className={inputClass + ' mt-2'} placeholder="Notes (optional)" value={vitals.notes} onChange={e => setVitals(s => ({ ...s, notes: e.target.value }))} />
                     <div className="flex gap-2 mt-3">
                       <button onClick={() => saveVitals(v)} disabled={saving}
-                        className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50" style={{ background: '#0EA5E9' }}>
+                        className="px-4 py-2 rounded-xl text-white text-xs font-bold disabled:opacity-50" style={{ background: 'var(--brand-color)' }}>
                         {saving ? 'Saving...' : 'Save Vitals'}
                       </button>
                       <button onClick={resetVitals} className="px-4 py-2 rounded-xl border border-gray-200 text-xs text-gray-600">Cancel</button>

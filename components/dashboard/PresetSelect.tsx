@@ -43,7 +43,7 @@ export function PresetSelect({ facilityId, table, value, onChange, extra, placeh
       <div className="flex gap-2">
         <input className={inputClass} value={newName} onChange={e => setNewName(e.target.value)}
           placeholder="New name" autoFocus onKeyDown={e => { if (e.key === 'Enter') addNew() }} />
-        <button onClick={addNew} className="px-3 py-2 rounded-xl text-white text-xs font-bold whitespace-nowrap" style={{ background: '#0EA5E9' }}>Add</button>
+        <button onClick={addNew} className="px-3 py-2 rounded-xl text-white text-xs font-bold whitespace-nowrap" style={{ background: 'var(--brand-color)' }}>Add</button>
         <button onClick={() => { setAdding(false); setNewName('') }} className="px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-600 whitespace-nowrap">Cancel</button>
       </div>
     )
